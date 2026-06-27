@@ -10,6 +10,9 @@ workflows:
         distribution_type: app_store
         bundle_identifier: jp.nicchizu.slaeat
     scripts:
+      - name: Create secrets.dart
+        script: |
+          echo "const String hotpepperApiKey = '$HOTPEPPER_API_KEY';" > lib/secrets.dart
       - name: Get Flutter packages
         script: |
           flutter packages pub get
