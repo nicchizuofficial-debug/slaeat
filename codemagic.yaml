@@ -30,8 +30,16 @@ workflows:
         script: |
           flutter build ipa --release \
             --export-options-plist=$CM_EXPORT_OPTIONS_PATH
+      - name: Find and copy IPA
+        script: |
+          echo "=== Searching for IPA ==="
+          find /Users/builder -name "*.ipa" 2>/dev/null || true
+          find . -name "*.ipa" 2>/dev/null || true
+          mkdir -p build/ios/ipa
+          find /Users/builder -name "*.ipa" -exec cp {} build/ios/ipa/ \; 2>/dev/null || true
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/**/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
