@@ -29,9 +29,15 @@ workflows:
       - name: Flutter build ipa
         script: |
           flutter build ipa --release
+      - name: Copy ipa
+        script: |
+          find build/ios -name "*.ipa" -exec cp {} $CM_BUILD_DIR/output.ipa \; || true
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/**/*.ipa
+      - "*.ipa"
       - /tmp/xcodebuild_logs/*.log
+      - build/ios/archive/Runner.xcarchive/dSYMs/**/*.dSYM
     publishing:
       app_store_connect:
         auth: integration
