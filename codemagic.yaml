@@ -6,6 +6,8 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      groups:
+        - slaeat
       ios_signing:
         distribution_type: app_store
         bundle_identifier: jp.nicchizu.slaeat
@@ -24,8 +26,7 @@ workflows:
           xcode-project use-profiles
       - name: Flutter build ipa
         script: |
-          flutter build ipa --release \
-            --export-options-plist=/Users/builder/export_options.plist
+          flutter build ipa --release
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
