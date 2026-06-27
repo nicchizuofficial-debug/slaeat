@@ -26,20 +26,31 @@ workflows:
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
+      - name: Generate ExportOptions.plist
+        script: |
+          cat > /tmp/ExportOptions.plist <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>jp.nicchizu.slaeat</key>
+        <string>SLAEAT AppStore</string>
+    </dict>
+</dict>
+</plist>
+PLIST
       - name: Flutter build ipa
         script: |
           flutter build ipa --release \
-            --export-options-plist=$CM_EXPORT_OPTIONS_PATH
-      - name: Find and copy IPA
-        script: |
-          echo "=== Searching for IPA ==="
-          find /Users/builder -name "*.ipa" 2>/dev/null || true
-          find . -name "*.ipa" 2>/dev/null || true
-          mkdir -p build/ios/ipa
-          find /Users/builder -name "*.ipa" -exec cp {} build/ios/ipa/ \; 2>/dev/null || true
+            --export-options-plist=/tmp/ExportOptions.plist
     artifacts:
       - build/ios/ipa/*.ipa
-      - build/ios/**/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
