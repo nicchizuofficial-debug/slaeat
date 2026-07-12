@@ -12,7 +12,7 @@ workflows:
         - slaeat
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: jp.nicchizu.slaeat
+        bundle_identifier: jp.nicchizu.slaeatapp
     scripts:
       - name: Create secrets.dart
         script: |
@@ -34,7 +34,7 @@ workflows:
               'method': 'app-store',
               'signingStyle': 'manual',
               'provisioningProfiles': {
-                  'jp.nicchizu.slaeat': 'SLAEAT AppStore'
+                  'jp.nicchizu.slaeatapp': 'SLAEAT AppStore'
               }
           }
           with open('/tmp/ExportOptions.plist', 'wb') as f:
