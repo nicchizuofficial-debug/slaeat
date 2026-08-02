@@ -136,6 +136,7 @@ class _SwipePageState extends State<SwipePage> {
   String? _budget;
   Set<String> _seatTypes = {};
   int _partySize = 1; // 1 = 指定なし
+  bool _openNowOnly = false;
   bool _loading = true;
   String? _error;
   int _currentIndex = 0;
@@ -180,6 +181,7 @@ class _SwipePageState extends State<SwipePage> {
         budget: _budget,
         seatTypes: _seatTypes,
         partyCapacity: _partySize >= 2 ? _partySize : null,
+        openNowOnly: _openNowOnly,
       );
       if (!mounted) return;
 
@@ -221,13 +223,15 @@ class _SwipePageState extends State<SwipePage> {
         initialBudget: _budget,
         initialSeatTypes: _seatTypes,
         initialPartySize: _partySize,
-        onApply: (range, mealOverride, budget, seatTypes, partySize) {
+        initialOpenNowOnly: _openNowOnly,
+        onApply: (range, mealOverride, budget, seatTypes, partySize, openNowOnly) {
           setState(() {
             _range = range;
             _mealTimeOverride = mealOverride;
             _budget = budget;
             _seatTypes = seatTypes;
             _partySize = partySize;
+            _openNowOnly = openNowOnly;
           });
           _load();
         },
@@ -674,6 +678,7 @@ class _SettingsSheet extends StatefulWidget {
     required this.initialBudget,
     required this.initialSeatTypes,
     required this.initialPartySize,
+    required this.initialOpenNowOnly,
     required this.onApply,
   });
 
@@ -682,12 +687,14 @@ class _SettingsSheet extends StatefulWidget {
   final String? initialBudget;
   final Set<String> initialSeatTypes;
   final int initialPartySize;
+  final bool initialOpenNowOnly;
   final void Function(
     int range,
     MealTime? mealOverride,
     String? budget,
     Set<String> seatTypes,
     int partySize,
+    bool openNowOnly,
   ) onApply;
 
   @override
@@ -700,6 +707,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
   String? _budget;
   late Set<String> _seatTypes;
   late int _partySize;
+  late bool _openNowOnly;
 
   String get _distLabel => _kRangeLabels[_sliderVal.round()];
   int get _rangeVal => _sliderVal.round() + 1;
@@ -712,6 +720,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     _budget = widget.initialBudget;
     _seatTypes = Set<String>.from(widget.initialSeatTypes);
     _partySize = widget.initialPartySize;
+    _openNowOnly = widget.initialOpenNowOnly;
   }
 
   @override
@@ -917,6 +926,25 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           ),
           const SizedBox(height: 28),
 
+          // ── 現在営業中のみ ────────────────────────────
+          Row(
+            children: [
+              const Text('現在営業中のみ',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _kText)),
+              const Spacer(),
+              Switch(
+                value: _openNowOnly,
+                onChanged: (v) => setState(() => _openNowOnly = v),
+                activeThumbColor: _kOrange,
+                activeTrackColor: _kOrange.withAlpha(180),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+
           // ── 人数 ──────────────────────────────────────
           Row(
             children: [
@@ -940,7 +968,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             child: FilledButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                widget.onApply(_rangeVal, _mealOverride, _budget, Set<String>.from(_seatTypes), _partySize);
+                widget.onApply(_rangeVal, _mealOverride, _budget, Set<String>.from(_seatTypes), _partySize, _openNowOnly);
               },
               style: FilledButton.styleFrom(
                 backgroundColor: _kOrange,

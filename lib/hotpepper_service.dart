@@ -16,6 +16,7 @@ class Shop {
     required this.lat,
     required this.lng,
     required this.url,
+    this.openTime = '',
   });
 
   final String name;
@@ -24,6 +25,7 @@ class Shop {
   final double lat;
   final double lng;
   final String url; // ホットペッパーの店舗ページURL
+  final String openTime; // 営業時間テキスト（例: "月〜日: 11:00〜23:00"）
 
   Map<String, dynamic> toJson() => {
         'name': name,
@@ -32,6 +34,7 @@ class Shop {
         'lat': lat,
         'lng': lng,
         'url': url,
+        'openTime': openTime,
       };
 
   factory Shop.fromJson(Map<String, dynamic> json) => Shop(
@@ -41,6 +44,7 @@ class Shop {
         lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
         lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
         url: json['url'] as String? ?? '',
+        openTime: json['openTime'] as String? ?? '',
       );
 }
 
@@ -94,11 +98,81 @@ class HotpepperService {
     '飲み放題': 'free_drink',
   };
 
+  // 営業時間テキストをパースして現在営業中かを判定する。
+  // パースできない形式の場合は true（表示する）を返す。
+  static bool isCurrentlyOpen(String openTime, [DateTime? now]) {
+    if (openTime.isEmpty) return true;
+    final dt = now ?? DateTime.now();
+    final nowMin = dt.hour * 60 + dt.minute;
+    final wd = dt.weekday; // Mon=1 … Sun=7
+
+    const kDow = {'月': 1, '火': 2, '水': 3, '木': 4, '金': 5, '土': 6, '日': 7};
+
+    // 「祝日」「祝前日」などの複合語に含まれる「日」を日曜と誤認しないよう除去する。
+    final cleaned = openTime
+        .replaceAll('祝前日', '')
+        .replaceAll('祝日', '')
+        .replaceAll('定休日', '')
+        .replaceAll('休日', '');
+
+    final segRe = RegExp(
+        r'(?:([月火水木金土日・〜～、]+)\s*[：:]\s*)?(\d{1,2}[：:]\d{2})\s*[〜～]\s*(翌)?(\d{1,2}[：:]\d{2})');
+
+    final matches = segRe.allMatches(cleaned).toList();
+    if (matches.isEmpty) return true; // パース不能 → 表示する
+
+    for (final m in matches) {
+      final daySpec = m.group(1);
+
+      if (daySpec != null && daySpec.isNotEmpty) {
+        bool dayOk = false;
+
+        // 「月〜金」のような範囲指定
+        final rangeM =
+            RegExp(r'([月火水木金土日])\s*[〜～]\s*([月火水木金土日])').firstMatch(daySpec);
+        if (rangeM != null) {
+          final s = kDow[rangeM.group(1)]!;
+          final e = kDow[rangeM.group(2)]!;
+          dayOk =
+              s <= e ? wd >= s && wd <= e : wd >= s || wd <= e;
+        } else {
+          // 個別指定（月・水・金 など）
+          for (final entry in kDow.entries) {
+            if (daySpec.contains(entry.key) && wd == entry.value) {
+              dayOk = true;
+              break;
+            }
+          }
+        }
+
+        if (!dayOk) continue;
+      }
+
+      final oMin = _parseHHMM(m.group(2)!);
+      final nextDay = m.group(3) != null;
+      var cMin = _parseHHMM(m.group(4)!);
+      if (nextDay || cMin <= oMin) cMin += 24 * 60; // 深夜をまたぐ場合
+
+      var check = nowMin;
+      if (check < oMin && cMin > 24 * 60) check += 24 * 60;
+
+      if (check >= oMin && check < cMin) return true;
+    }
+
+    return false;
+  }
+
+  static int _parseHHMM(String s) {
+    final p = s.replaceAll('：', ':').split(':');
+    return int.parse(p[0]) * 60 + int.parse(p[1]);
+  }
+
   // 指定した緯度・経度の周辺にある飲食店を、時間帯に応じて取得する。
   // range: 1=300m, 2=500m, 3=1000m, 4=2000m, 5=3000m。
   // budget: Hotpepper予算コード（null=指定なし）。
   // seatTypes: 絞り込む席タイプ名の集合。
   // partyCapacity: 最低収容人数（null=指定なし）。
+  // openNowOnly: true のとき営業時間外の店舗を除外する。
   static Future<GourmetResult> fetchNearby({
     required double latitude,
     required double longitude,
@@ -108,6 +182,7 @@ class HotpepperService {
     String? budget,
     Set<String> seatTypes = const {},
     int? partyCapacity,
+    bool openNowOnly = false,
   }) async {
     final time = now ?? DateTime.now();
     final meal = mealOverride ?? currentMealTime(time);
@@ -178,6 +253,10 @@ class HotpepperService {
       if (meal == MealTime.morning && _morningExclude.contains(genre)) continue;
 
       final urls = shopMap['urls'] as Map<String, dynamic>?;
+      final openTimeText = shopMap['open'] as String? ?? '';
+
+      if (openNowOnly && !isCurrentlyOpen(openTimeText, time)) continue;
+
       final shop = Shop(
         name: shopMap['name'] as String? ?? '',
         genre: genre,
@@ -185,6 +264,7 @@ class HotpepperService {
         lat: (shopMap['lat'] as num?)?.toDouble() ?? latitude,
         lng: (shopMap['lng'] as num?)?.toDouble() ?? longitude,
         url: urls?['pc'] as String? ?? '',
+        openTime: openTimeText,
       );
 
       shopsByGenre.putIfAbsent(genre, () => []).add(shop);
