@@ -10,6 +10,9 @@ workflows:
       cocoapods: default
       groups:
         - slaeat
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: jp.nicchizu.slaeatapp
     scripts:
       - name: Create secrets.dart
         script: |
@@ -26,24 +29,9 @@ workflows:
             --type IOS_APP_STORE \
             --create
           xcode-project use-profiles
-      - name: Generate ExportOptions.plist
-        script: |
-          python3 -c "
-          import plistlib
-          plist = {
-              'method': 'app-store',
-              'signingStyle': 'manual',
-              'provisioningProfiles': {
-                  'jp.nicchizu.slaeatapp': 'SLAEAT AppStore New'
-              }
-          }
-          with open('/tmp/ExportOptions.plist', 'wb') as f:
-              plistlib.dump(plist, f)
-          print('ExportOptions.plist created')
-          "
       - name: Flutter build ipa
         script: |
-          flutter build ipa --release --export-options-plist=/tmp/ExportOptions.plist
+          flutter build ipa --release
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
