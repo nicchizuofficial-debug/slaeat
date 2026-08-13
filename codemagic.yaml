@@ -21,6 +21,14 @@ workflows:
       - name: Install pods
         script: |
           find . -name "Podfile" -execdir pod install \;
+      - name: Debug code signing state
+        script: |
+          echo "=== Keychain certificates ==="
+          security find-identity -v -p codesigning 2>/dev/null || echo "NONE"
+          echo "=== MobileDevice Provisioning Profiles ==="
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "EMPTY"
+          echo "=== Xcode UserData Provisioning Profiles ==="
+          ls -la ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/ 2>/dev/null || echo "EMPTY"
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
