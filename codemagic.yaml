@@ -25,6 +25,9 @@ workflows:
           find . -name "Podfile" -execdir pod install \;
       - name: Set up code signing settings on Xcode project
         script: |
+          app-store-connect fetch-signing-files "jp.nicchizu.slaeatapp" \
+            --type IOS_APP_STORE \
+            --create
           xcode-project use-profiles
       - name: Generate ExportOptions.plist
         script: |
