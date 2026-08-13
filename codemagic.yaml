@@ -39,7 +39,7 @@ workflows:
           grep -n "CODE_SIGN\|DEVELOPMENT_TEAM\|PROVISIONING_PROFILE_SPECIFIER" ios/Runner.xcodeproj/project.pbxproj | head -30
       - name: Flutter build ipa
         script: |
-          flutter build ipa --release --export-options-plist=/tmp/ExportOptions.plist
+          flutter build ipa --release --build-number=$BUILD_NUMBER --export-options-plist=/tmp/ExportOptions.plist
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
