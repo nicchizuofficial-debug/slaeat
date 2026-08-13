@@ -10,9 +10,6 @@ workflows:
       cocoapods: default
       groups:
         - slaeat
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: jp.nicchizu.slaeatapp
     scripts:
       - name: Create secrets.dart
         script: |
