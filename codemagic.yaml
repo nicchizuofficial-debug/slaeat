@@ -27,7 +27,7 @@ workflows:
           security cms -D -i "$PROFILE_PATH" > /tmp/decoded_profile.plist
           PROFILE_UUID=$(python3 -c "import plistlib; print(plistlib.load(open('/tmp/decoded_profile.plist','rb'))['UUID'])")
           echo "Profile UUID: $PROFILE_UUID"
-          python3 -c "c=open('ios/Runner.xcodeproj/project.pbxproj').read(); c=c.replace('CODE_SIGN_STYLE = Automatic;','CODE_SIGN_STYLE = Manual;'); open('ios/Runner.xcodeproj/project.pbxproj','w').write(c); print('Manual signing set')"
+          python3 -c "c=open('ios/Runner.xcodeproj/project.pbxproj').read(); c=c.replace('\"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" = \"iPhone Developer\";','\"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" = \"Apple Distribution\";'); open('ios/Runner.xcodeproj/project.pbxproj','w').write(c); print('CODE_SIGN_IDENTITY updated')"
           python3 -c "import plistlib; ep={'method':'app-store','teamID':'8736NCW3K4','signingStyle':'manual','provisioningProfiles':{'jp.nicchizu.slaeatapp':'$PROFILE_UUID'}}; plistlib.dump(ep,open('/tmp/ExportOptions.plist','wb')); print('ExportOptions created')"
       - name: Flutter build ipa
         script: |
