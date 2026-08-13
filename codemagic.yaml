@@ -10,6 +10,9 @@ workflows:
       cocoapods: default
       groups:
         - slaeat
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: jp.nicchizu.slaeatapp
     scripts:
       - name: Create secrets.dart
         script: |
@@ -20,12 +23,8 @@ workflows:
       - name: Install pods
         script: |
           find . -name "Podfile" -execdir pod install \;
-      - name: Set up keychain and code signing
+      - name: Set up code signing settings on Xcode project
         script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "jp.nicchizu.slaeatapp" \
-            --type IOS_APP_STORE \
-            --create
           xcode-project use-profiles
       - name: Flutter build ipa
         script: |
