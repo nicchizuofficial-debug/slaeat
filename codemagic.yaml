@@ -21,17 +21,15 @@ workflows:
       - name: Install pods
         script: |
           find . -name "Podfile" -execdir pod install \;
-      - name: Debug code signing state
+      - name: Debug profile contents
         script: |
-          echo "=== Keychain certificates ==="
-          security find-identity -v -p codesigning 2>/dev/null || echo "NONE"
-          echo "=== MobileDevice Provisioning Profiles ==="
-          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "EMPTY"
-          echo "=== Xcode UserData Provisioning Profiles ==="
-          ls -la ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/ 2>/dev/null || echo "EMPTY"
+          for p in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+            echo "=== Profile: $p ==="
+            strings "$p" | grep -E "jp\.|Name|AppID|slaeat" | head -20
+          done
       - name: Set up code signing settings on Xcode project
         script: |
-          xcode-project use-profiles
+          xcode-project use-profiles --xcode-project ios/Runner.xcodeproj
       - name: Flutter build ipa
         script: |
           flutter build ipa --release
