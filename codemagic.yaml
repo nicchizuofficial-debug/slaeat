@@ -23,7 +23,6 @@ workflows:
       - name: Set up keychain and code signing
         script: |
           keychain initialize
-          keychain add-certificates
           app-store-connect fetch-signing-files "jp.nicchizu.slaeatapp" \
             --type IOS_APP_STORE \
             --create
