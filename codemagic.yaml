@@ -25,39 +25,10 @@ workflows:
         script: |
           PROFILE_PATH=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
           security cms -D -i "$PROFILE_PATH" > /tmp/decoded_profile.plist
-
-          python3 - << 'PYEOF'
-import plistlib
-
-with open('/tmp/decoded_profile.plist', 'rb') as f:
-    profile = plistlib.load(f)
-
-uuid = profile['UUID']
-name = profile.get('Name', '')
-print(f'Profile UUID: {uuid}')
-print(f'Profile Name: {name}')
-
-# Switch Xcode project to manual signing
-with open('ios/Runner.xcodeproj/project.pbxproj', 'r') as f:
-    content = f.read()
-content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
-with open('ios/Runner.xcodeproj/project.pbxproj', 'w') as f:
-    f.write(content)
-print('Switched to manual signing')
-
-# Create ExportOptions.plist
-export_options = {
-    'method': 'app-store',
-    'teamID': '8736NCW3K4',
-    'signingStyle': 'manual',
-    'provisioningProfiles': {
-        'jp.nicchizu.slaeatapp': uuid
-    }
-}
-with open('/tmp/ExportOptions.plist', 'wb') as f:
-    plistlib.dump(export_options, f)
-print('ExportOptions.plist created')
-PYEOF
+          PROFILE_UUID=$(python3 -c "import plistlib; print(plistlib.load(open('/tmp/decoded_profile.plist','rb'))['UUID'])")
+          echo "Profile UUID: $PROFILE_UUID"
+          python3 -c "c=open('ios/Runner.xcodeproj/project.pbxproj').read(); c=c.replace('CODE_SIGN_STYLE = Automatic;','CODE_SIGN_STYLE = Manual;'); open('ios/Runner.xcodeproj/project.pbxproj','w').write(c); print('Manual signing set')"
+          python3 -c "import plistlib; ep={'method':'app-store','teamID':'8736NCW3K4','signingStyle':'manual','provisioningProfiles':{'jp.nicchizu.slaeatapp':'$PROFILE_UUID'}}; plistlib.dump(ep,open('/tmp/ExportOptions.plist','wb')); print('ExportOptions created')"
       - name: Flutter build ipa
         script: |
           flutter build ipa --release --export-options-plist=/tmp/ExportOptions.plist
