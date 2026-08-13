@@ -34,7 +34,7 @@ workflows:
               'method': 'app-store',
               'signingStyle': 'manual',
               'provisioningProfiles': {
-                  'jp.nicchizu.slaeatapp': 'SLAEAT AppStore'
+                  'jp.nicchizu.slaeatapp': 'SLAEAT AppStore New'
               }
           }
           with open('/tmp/ExportOptions.plist', 'wb') as f:
