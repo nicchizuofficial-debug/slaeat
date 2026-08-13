@@ -21,18 +21,46 @@ workflows:
       - name: Install pods
         script: |
           find . -name "Podfile" -execdir pod install \;
-      - name: Debug profile contents
-        script: |
-          for p in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
-            echo "=== Profile: $p ==="
-            strings "$p" | grep -E "jp\.|Name|AppID|slaeat" | head -20
-          done
       - name: Set up code signing settings on Xcode project
         script: |
-          xcode-project use-profiles --xcode-project ios/Runner.xcodeproj
+          PROFILE_PATH=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
+          security cms -D -i "$PROFILE_PATH" > /tmp/decoded_profile.plist
+
+          python3 - << 'PYEOF'
+import plistlib
+
+with open('/tmp/decoded_profile.plist', 'rb') as f:
+    profile = plistlib.load(f)
+
+uuid = profile['UUID']
+name = profile.get('Name', '')
+print(f'Profile UUID: {uuid}')
+print(f'Profile Name: {name}')
+
+# Switch Xcode project to manual signing
+with open('ios/Runner.xcodeproj/project.pbxproj', 'r') as f:
+    content = f.read()
+content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+with open('ios/Runner.xcodeproj/project.pbxproj', 'w') as f:
+    f.write(content)
+print('Switched to manual signing')
+
+# Create ExportOptions.plist
+export_options = {
+    'method': 'app-store',
+    'teamID': '8736NCW3K4',
+    'signingStyle': 'manual',
+    'provisioningProfiles': {
+        'jp.nicchizu.slaeatapp': uuid
+    }
+}
+with open('/tmp/ExportOptions.plist', 'wb') as f:
+    plistlib.dump(export_options, f)
+print('ExportOptions.plist created')
+PYEOF
       - name: Flutter build ipa
         script: |
-          flutter build ipa --release
+          flutter build ipa --release --export-options-plist=/tmp/ExportOptions.plist
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
