@@ -119,7 +119,22 @@ class MyApp extends StatelessWidget {
 
 // ─── スワイプ画面 ───────────────────────────────────────────────
 class SwipePage extends StatefulWidget {
-  const SwipePage({super.key});
+  const SwipePage({
+    super.key,
+    this.initialRange = 3,
+    this.initialMealTimeOverride,
+    this.initialBudget,
+    this.initialSeatTypes = const {},
+    this.initialPartySize = 1,
+    this.initialOpenNowOnly = false,
+  });
+
+  final int initialRange;
+  final MealTime? initialMealTimeOverride;
+  final String? initialBudget;
+  final Set<String> initialSeatTypes;
+  final int initialPartySize;
+  final bool initialOpenNowOnly;
 
   @override
   State<SwipePage> createState() => _SwipePageState();
@@ -131,12 +146,12 @@ class _SwipePageState extends State<SwipePage> {
   String _timeLabel = '';
   final List<String> _liked = [];
   final CardSwiperController _controller = CardSwiperController();
-  int _range = 3;
-  MealTime? _mealTimeOverride;
-  String? _budget;
-  Set<String> _seatTypes = {};
-  int _partySize = 1; // 1 = 指定なし
-  bool _openNowOnly = false;
+  late int _range;
+  late MealTime? _mealTimeOverride;
+  late String? _budget;
+  late Set<String> _seatTypes;
+  late int _partySize;
+  late bool _openNowOnly;
   bool _loading = true;
   String? _error;
   int _currentIndex = 0;
@@ -153,6 +168,12 @@ class _SwipePageState extends State<SwipePage> {
   @override
   void initState() {
     super.initState();
+    _range = widget.initialRange;
+    _mealTimeOverride = widget.initialMealTimeOverride;
+    _budget = widget.initialBudget;
+    _seatTypes = Set<String>.from(widget.initialSeatTypes);
+    _partySize = widget.initialPartySize;
+    _openNowOnly = widget.initialOpenNowOnly;
     _load();
   }
 
@@ -265,6 +286,12 @@ class _SwipePageState extends State<SwipePage> {
       builder: (_) => ResultPage(
         likedGenres: List<String>.from(_liked),
         shopsByGenre: _shopsByGenre,
+        range: _range,
+        mealTimeOverride: _mealTimeOverride,
+        budget: _budget,
+        seatTypes: Set<String>.from(_seatTypes),
+        partySize: _partySize,
+        openNowOnly: _openNowOnly,
       ),
     ));
   }
@@ -1105,10 +1132,22 @@ class ResultPage extends StatefulWidget {
     super.key,
     required this.likedGenres,
     required this.shopsByGenre,
+    required this.range,
+    required this.mealTimeOverride,
+    required this.budget,
+    required this.seatTypes,
+    required this.partySize,
+    required this.openNowOnly,
   });
 
   final List<String> likedGenres;
   final Map<String, List<Shop>> shopsByGenre;
+  final int range;
+  final MealTime? mealTimeOverride;
+  final String? budget;
+  final Set<String> seatTypes;
+  final int partySize;
+  final bool openNowOnly;
 
   @override
   State<ResultPage> createState() => _ResultPageState();
@@ -1378,7 +1417,16 @@ class _ResultPageState extends State<ResultPage>
       width: double.infinity,
       child: FilledButton.icon(
         onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const SwipePage()),
+          MaterialPageRoute(
+            builder: (_) => SwipePage(
+              initialRange: widget.range,
+              initialMealTimeOverride: widget.mealTimeOverride,
+              initialBudget: widget.budget,
+              initialSeatTypes: widget.seatTypes,
+              initialPartySize: widget.partySize,
+              initialOpenNowOnly: widget.openNowOnly,
+            ),
+          ),
           (route) => false,
         ),
         icon: const Icon(Icons.refresh_rounded),
