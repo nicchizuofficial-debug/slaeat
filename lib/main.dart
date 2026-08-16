@@ -1211,10 +1211,7 @@ class _ResultPageState extends State<ResultPage>
 
   Future<void> _openShop(Shop shop) async {
     if (shop.url.isEmpty) return;
-    final encoded = Uri.encodeComponent(shop.url);
-    final affiliateUrl =
-        'https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3774487&pid=892646410&vc_url=$encoded';
-    final ok = await launchUrl(Uri.parse(affiliateUrl),
+    final ok = await launchUrl(Uri.parse(shop.url),
         mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
